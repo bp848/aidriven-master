@@ -1,60 +1,74 @@
-import { Storage } from '@google-cloud/storage';
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import fs from 'fs';
-import path from 'path';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+const PROCESS_MASTERING_URL =
+  `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/process-mastering`;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+
   try {
-    if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+    const { fileName, jobId } = req.body as {
+      fileName: string;
+      contentType?: string;
+      jobId: string;
+    };
 
-    const { fileName, contentType, jobId } = req.body;
-
-    // 1. Initialize Credentials
-    let credentials = {};
-    if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
-      try {
-        credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
-      } catch (e) {
-        return res.status(500).json({ error: 'Failed to parse GOOGLE_APPLICATION_CREDENTIALS_JSON environment variable.' });
-      }
-    } else {
-      // Local fallback
-      const saPath = path.join(process.cwd(), 'sa-key.json');
-      if (fs.existsSync(saPath)) {
-        credentials = JSON.parse(fs.readFileSync(saPath, 'utf8'));
-      }
+    if (!fileName || !jobId) {
+      return res.status(400).json({ error: 'fileName and jobId are required' });
     }
 
-    const projectId = process.env.GOOGLE_CLOUD_PROJECT || (credentials as any).project_id;
-    if (!projectId) {
-      return res.status(500).json({ error: 'Server configuration error: Missing Google Cloud Project ID' });
+    // ── 1. Generate a signed upload URL for Supabase Storage ────────────────
+    const storagePath = `${jobId}/${fileName}`;
+    const { data: signedData, error: signErr } = await supabase.storage
+      .from('originals')
+      .createSignedUploadUrl(storagePath);
+
+    if (signErr || !signedData) {
+      console.error('Signed URL error:', signErr);
+      return res.status(500).json({ error: `Storage error: ${signErr?.message}` });
     }
 
-    // 2. Initialize Storage
-    const storage = new Storage({
-      credentials: Object.keys(credentials).length > 0 ? credentials : undefined,
-      projectId,
-    });
+    // ── 2. Update job with storage path ─────────────────────────────────────
+    const { error: updateErr } = await supabase
+      .from('mastering_jobs')
+      .update({
+        original_file_path: storagePath,
+        input_path: storagePath,
+        status: 'uploaded',
+      })
+      .eq('id', jobId);
 
-    const bucketName = process.env.INPUT_BUCKET || 'aidriven-mastering-input';
-    const bucket = storage.bucket(bucketName);
-    const file = bucket.file(`uploads/${jobId}_${fileName}`);
+    if (updateErr) {
+      console.error('DB update error:', updateErr);
+      // Non-fatal — continue
+    }
 
-    console.log(`Generating signed URL for: ${file.name}`);
-
-    const [url] = await file.getSignedUrl({
-      version: 'v4',
-      action: 'write',
-      expires: Date.now() + 15 * 60 * 1000, // 15 minutes
-      contentType,
-      extensionHeaders: {
-        'x-goog-meta-jobId': jobId,
+    // ── 3. Kick off mastering asynchronously (fire-and-forget) ──────────────
+    // We don't await this — the Edge Function will update DB on completion
+    fetch(PROCESS_MASTERING_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // Edge Function is verify_jwt: false, no auth needed
       },
+      body: JSON.stringify({ job_id: jobId }),
+    }).catch((e) => console.error('process-mastering trigger error:', e));
+
+    // ── 4. Return the signed URL to the frontend ─────────────────────────────
+    return res.status(200).json({
+      url: signedData.signedUrl,
+      path: storagePath,
+      token: signedData.token,
     });
 
-    return res.status(200).json({ url, path: file.name });
   } catch (error: any) {
-    console.error("Upload handler error:", error);
-    return res.status(500).json({ error: `Upload API Internal Error: ${error.message}` });
+    console.error('Upload handler error:', error);
+    return res.status(500).json({ error: `Upload API Error: ${error.message}` });
   }
 }

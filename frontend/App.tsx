@@ -102,21 +102,20 @@ export default function App() {
       if (!response.ok) throw new Error(data?.error || `Server Error (${response.status})`);
       if (!data?.url) throw new Error('Missing signed upload URL');
 
-      const { url, path: remotePath } = data;
+      // Upload to Supabase Storage via signed URL (PUT)
+      const { url } = data;
       const uploadRes = await fetch(url, {
         method: 'PUT',
-        headers: { 'Content-Type': file.type, 'x-goog-meta-jobId': job.id },
+        headers: { 'Content-Type': file.type },
         body: file,
       });
       if (!uploadRes.ok) throw new Error(`Upload failed: ${uploadRes.status}`);
 
-      const { error: updateErr } = await supabase
-        .from('mastering_jobs').update({ input_path: remotePath }).eq('id', job.id);
-      if (updateErr) throw updateErr;
-
+      // process-mastering Edge Function triggered server-side (fire-and-forget)
+      // DB trigger auto-sends email when status = 'completed'
       setSubmittedJob({ id: job.id, fileName: file.name });
-      setActiveJobId(null);
-      setState(idleState);
+      setActiveJobId(job.id); // stay subscribed for realtime status updates
+      setState(prev => ({ ...prev, step: 'analyzing', progress: 20 }));
     } catch (error: any) {
       console.error(error);
       setState(prev => ({ ...prev, step: 'idle', progress: 0, error: error.message }));
