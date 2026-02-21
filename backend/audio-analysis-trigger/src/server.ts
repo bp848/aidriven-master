@@ -6,6 +6,10 @@ import * as path from 'path';
 import * as dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
 
+const cleanJsonResponse = (text: string) => {
+    return text.replace(/```json/g, '').replace(/```/g, '').trim();
+};
+
 dotenv.config();
 
 const app = express();
@@ -66,7 +70,9 @@ app.post('/trigger', async (req: any, res: any) => {
             contents: [{ role: 'user', parts: [{ text: audiencePrompt }, audioFileData] }],
             generationConfig: { responseMimeType: 'application/json' }
         });
-        const audienceOpinion = JSON.parse(audienceResult.response.candidates?.[0].content.parts[0].text || '{}');
+        const audienceText = cleanJsonResponse(audienceResult.response.candidates?.[0].content.parts[0].text || '{}');
+        const audienceOpinion = JSON.parse(audienceText);
+        console.log('Audience Opinion:', audienceOpinion.comment?.slice(0, 50));
 
         // 2. A&R Persona Call
         console.log('Consulting A&R Agent...');
@@ -80,7 +86,9 @@ app.post('/trigger', async (req: any, res: any) => {
             contents: [{ role: 'user', parts: [{ text: arPrompt }, audioFileData] }],
             generationConfig: { responseMimeType: 'application/json' }
         });
-        const arOpinion = JSON.parse(arResult.response.candidates?.[0].content.parts[0].text || '{}');
+        const arText = cleanJsonResponse(arResult.response.candidates?.[0].content.parts[0].text || '{}');
+        const arOpinion = JSON.parse(arText);
+        console.log('A&R Opinion:', arOpinion.comment?.slice(0, 50));
 
         // 3. Engineer Persona Call (Final Consensus)
         console.log('Consulting Engineer Agent (Final Consensus)...');
@@ -106,7 +114,9 @@ app.post('/trigger', async (req: any, res: any) => {
             contents: [{ role: 'user', parts: [{ text: engineerPrompt }, audioFileData] }],
             generationConfig: { responseMimeType: 'application/json' }
         });
-        const finalConsensus = JSON.parse(engineerResult.response.candidates?.[0].content.parts[0].text || '{}');
+        const engineerText = cleanJsonResponse(engineerResult.response.candidates?.[0].content.parts[0].text || '{}');
+        const finalConsensus = JSON.parse(engineerText);
+        console.log('Engineer Consensus achieved.');
         if (!finalConsensus || !finalConsensus.finalParams) {
             throw new Error('AI failed to generate valid mastering parameters. Please try with a different track or check the AI prompt.');
         }

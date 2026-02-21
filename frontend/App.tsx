@@ -53,6 +53,18 @@ export default function App() {
 
           const publicUrl = job.output_path ? job.output_path.replace('gs://', 'https://storage.googleapis.com/') : null;
 
+          if (job.status === 'failed') {
+            setState((prev: MasteringState) => ({
+              ...prev,
+              step: 'idle',
+              progress: 0,
+              error: job.error_message || "Analysis failed. Our neural agents couldn't reach a consensus. Please try another track."
+            }));
+            setActiveJobId(null);
+            channel.unsubscribe();
+            return;
+          }
+
           setState((prev: MasteringState) => ({
             ...prev,
             step: job.status,
@@ -60,6 +72,7 @@ export default function App() {
             consensus: job.consensus_opinions,
             finalParams: job.final_params,
             outputUrl: publicUrl,
+            error: null, // Clear any previous error if we got an update
             progress: job.status === 'analyzing' ? 40 : job.status === 'processing' ? 70 : job.status === 'completed' ? 100 : prev.progress
           }));
 
