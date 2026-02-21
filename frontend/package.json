@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@eslint/js": "^9.39.3",
     "@google-cloud/storage": "^7.19.0",
     "@google/genai": "latest",
     "@supabase/supabase-js": "latest",

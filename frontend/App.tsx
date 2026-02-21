@@ -6,7 +6,7 @@ import { AnalysisView } from './components/AnalysisView';
 import { AgentConsensus } from './components/AgentConsensus';
 import { AudioComparisonPlayer } from './components/AudioComparisonPlayer';
 import { MasteringState } from './types';
-import { Download, RefreshCw, CheckCircle2, Loader2, Waves, AlertCircle } from 'lucide-react';
+import { Download, RefreshCw, CheckCircle2, Waves, AlertCircle } from 'lucide-react';
 import { supabase } from './services/supabaseClient';
 
 // Use direct functional component definition to avoid FC type issues
@@ -217,14 +217,14 @@ export default function App() {
     });
   };
 
-  const isProcessing = state.step !== 'idle' && state.step !== 'completed';
+  const isProcessing = state.step === 'uploading';
 
   return (
     <div className="min-h-screen pb-32 pt-24">
       <Header />
 
       <main className="max-w-7xl mx-auto px-8">
-        {state.step === 'idle' && (
+        {(state.step === 'idle' || state.step === 'uploading') && (
           <div className="flex flex-col items-center justify-center min-h-[70vh] text-center space-y-12">
             <div className="space-y-6 max-w-4xl">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass border-blue-500/20 text-blue-400 text-[10px] font-mono uppercase tracking-[0.3em] mb-4">
@@ -266,18 +266,9 @@ export default function App() {
         {state.step === 'uploading' && (
           <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-12">
             <div className="relative">
-              <div className="absolute -inset-10 bg-blue-500/10 rounded-full blur-[100px] animate-pulse"></div>
-              <div className="relative w-48 h-48 flex items-center justify-center">
-                <svg className="w-full h-full -rotate-90">
-                  <circle cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-white/5" />
-                  <circle cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="4" fill="transparent"
-                    strokeDasharray={552} strokeDashoffset={552 - (552 * state.progress) / 100}
-                    className="text-blue-500 transition-all duration-1000 ease-out" />
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <Loader2 className="w-10 h-10 text-blue-400 animate-spin mb-2" />
-                  <span className="text-2xl font-black text-white mono">{state.progress}%</span>
-                </div>
+              <div className="absolute -inset-6 bg-emerald-500/20 rounded-full blur-2xl"></div>
+              <div className="relative p-5 bg-emerald-500/10 rounded-full border border-emerald-500/40">
+                <CheckCircle2 className="w-10 h-10 text-emerald-300" />
               </div>
             </div>
             <div className="text-center space-y-3">
@@ -285,7 +276,12 @@ export default function App() {
               <p className="text-blue-400 font-mono text-xs uppercase tracking-[0.5em] animate-pulse">
                 Sending raw spectral data to matrix...
               </p>
+              <p className="text-xs text-emerald-200/70 font-mono">{submittedJob.fileName}</p>
+              <p className="text-[10px] text-emerald-200/50 font-mono">Job ID: {submittedJob.id}</p>
             </div>
+            <button onClick={reset} className="px-8 py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold uppercase tracking-wider">
+              Upload Next Track
+            </button>
           </div>
         )}
 

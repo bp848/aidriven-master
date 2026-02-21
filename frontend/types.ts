@@ -23,7 +23,7 @@ export interface AgentOpinion {
 }
 
 export interface MasteringState {
-  step: 'idle' | 'uploading' | 'analyzing' | 'consensus' | 'processing' | 'completed';
+  step: 'idle' | 'uploading' | 'submitted' | 'analyzing' | 'consensus' | 'processing' | 'completed';
   progress: number;
   fileName: string | null;
   analysis: AnalysisMetric[] | null;
