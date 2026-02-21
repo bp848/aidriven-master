@@ -276,8 +276,8 @@ export default function App() {
               <p className="text-blue-400 font-mono text-xs uppercase tracking-[0.5em] animate-pulse">
                 Sending raw spectral data to matrix...
               </p>
-              <p className="text-xs text-emerald-200/70 font-mono">{submittedJob.fileName}</p>
-              <p className="text-[10px] text-emerald-200/50 font-mono">Job ID: {submittedJob.id}</p>
+              <p className="text-xs text-emerald-200/70 font-mono">{submittedJob?.fileName}</p>
+              <p className="text-[10px] text-emerald-200/50 font-mono">Job ID: {submittedJob?.id}</p>
             </div>
             <button onClick={reset} className="px-8 py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold uppercase tracking-wider">
               Upload Next Track
