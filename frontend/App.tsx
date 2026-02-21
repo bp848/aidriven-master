@@ -120,10 +120,6 @@ export default function App() {
     setState((prev: MasteringState) => ({ ...prev, step: 'uploading', progress: 5, fileName: file.name, userEmail: email }));
 
     try {
-      // Decode locally for original player
-      const arrayBuffer = await file.arrayBuffer();
-      const originalBuffer = await audioContext.decodeAudioData(arrayBuffer);
-      setState(prev => ({ ...prev, originalBuffer }));
       // 1. Create Job in Supabase
       const { data: job, error: jobErr } = await supabase
         .from('mastering_jobs')
@@ -138,6 +134,11 @@ export default function App() {
 
       if (jobErr) throw jobErr;
       setActiveJobId(job.id);
+
+      // Async decode so we don't block upload
+      file.arrayBuffer().then(buf => audioContext.decodeAudioData(buf)).then(decoded => {
+        setState(prev => ({ ...prev, originalBuffer: decoded }));
+      }).catch(e => console.error("Non-blocking decode failed:", e));
 
       // 2. Get Signed URL for GCS upload
       const response = await fetch('/api/upload', {

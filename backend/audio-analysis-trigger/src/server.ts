@@ -1,5 +1,4 @@
 import express from 'express';
-import { Storage } from '@google-cloud/storage';
 import { PubSub } from '@google-cloud/pubsub';
 import { VertexAI } from '@google-cloud/vertexai';
 import * as path from 'path';
