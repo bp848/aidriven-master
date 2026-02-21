@@ -107,23 +107,28 @@ app.post('/trigger', async (req: any, res: any) => {
             generationConfig: { responseMimeType: 'application/json' }
         });
         const finalConsensus = JSON.parse(engineerResult.response.candidates?.[0].content.parts[0].text || '{}');
+        if (!finalConsensus || !finalConsensus.finalParams) {
+            throw new Error('AI failed to generate valid mastering parameters. Please try with a different track or check the AI prompt.');
+        }
 
         const consensusOpinions = [
-            { role: 'Audience', comment: audienceOpinion.comment },
-            { role: 'A&R', comment: arOpinion.comment },
-            { role: 'Engineer', comment: finalConsensus.engineerComment }
+            { role: 'Audience', comment: audienceOpinion.comment || 'No comment provided' },
+            { role: 'A&R', comment: arOpinion.comment || 'No comment provided' },
+            { role: 'Engineer', comment: finalConsensus.engineerComment || 'No comment provided' }
         ];
 
         console.log('Multi-Agent Consensus achieved.');
 
         // 3. Update Supabase
         if (jobId) {
-            await supabase.from('mastering_jobs').update({
+            const { error: updateErr } = await supabase.from('mastering_jobs').update({
                 status: 'processing',
-                metrics: finalConsensus.metrics,
+                metrics: finalConsensus.metrics || [],
                 consensus_opinions: consensusOpinions,
                 final_params: finalConsensus.finalParams
             }).eq('id', jobId);
+
+            if (updateErr) throw updateErr;
         }
 
         // 4. Trigger DSP Engine
@@ -138,7 +143,7 @@ app.post('/trigger', async (req: any, res: any) => {
             outputBucket: outputBucket,
             outputPath: outputPath,
             params: finalConsensus.finalParams,
-            targetLUFS: finalConsensus.finalParams.target_lufs
+            targetLUFS: finalConsensus.finalParams.target_lufs || -8.0
         };
 
         const messageId = await pubsub.topic(topicName).publishMessage({
@@ -151,9 +156,18 @@ app.post('/trigger', async (req: any, res: any) => {
     } catch (error: any) {
         console.error('Error in analysis trigger:', error);
         if (jobId) {
-            await supabase.from('mastering_jobs').update({ status: 'failed', error_message: error.message }).eq('id', jobId);
+            try {
+                await supabase.from('mastering_jobs').update({
+                    status: 'failed',
+                    error_message: error.message
+                }).eq('id', jobId);
+            } catch (dbErr) {
+                console.error('Failed to update error status in DB:', dbErr);
+            }
         }
-        res.status(500).send(`Analysis failed: ${error.message || 'Unknown error'}`);
+        // Return 200 to acknowledge Pub/Sub message and stop the retry loop, 
+        // since we've already handled the failure state in our DB.
+        res.status(200).send(`Handled failure: ${error.message}`);
     }
 });
 
