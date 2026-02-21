@@ -11,7 +11,7 @@ import { supabase } from './services/supabaseClient';
 
 // Use direct functional component definition to avoid FC type issues
 export default function App() {
-  const [state, setState] = useState<MasteringState>({
+  const idleState: MasteringState = {
     step: 'idle',
     progress: 0,
     fileName: null,
@@ -23,7 +23,12 @@ export default function App() {
     masteredBuffer: null,
     userEmail: null,
     error: null,
+  };
+
+  const [state, setState] = useState<MasteringState>({
+    ...idleState,
   });
+  const [submittedJob, setSubmittedJob] = useState<{ id: string; fileName: string } | null>(null);
 
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [audioContext] = useState(() => new (window.AudioContext || (window as any).webkitAudioContext)());
@@ -181,7 +186,9 @@ export default function App() {
 
       if (updateErr) throw updateErr;
 
-      setState((prev: MasteringState) => ({ ...prev, progress: 20 }));
+      setSubmittedJob({ id: job.id, fileName: file.name });
+      setActiveJobId(null);
+      setState(idleState);
 
     } catch (error: any) {
       console.error("Mastering failed:", error);
@@ -238,6 +245,17 @@ export default function App() {
                 <AlertCircle className="w-5 h-5 text-red-500" />
                 <p className="text-red-400 text-sm font-medium">{state.error}</p>
                 <button onClick={() => setState(p => ({ ...p, error: null }))} className="ml-4 text-red-500/50 hover:text-red-500">×</button>
+              </div>
+            )}
+
+            {submittedJob && (
+              <div className="w-full max-w-2xl rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5 text-left animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <p className="text-sm font-semibold text-emerald-300">Upload accepted: {submittedJob.fileName}</p>
+                <p className="mt-2 text-xs text-emerald-100/80">
+                  Mastering continues in the background. You can leave now, or upload the next track immediately.
+                  We will send the completed result to your email.
+                </p>
+                <p className="mt-2 text-[10px] font-mono text-emerald-200/70">Job ID: {submittedJob.id}</p>
               </div>
             )}
 

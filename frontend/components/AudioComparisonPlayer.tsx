@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, Pause, Zap, Music, Volume2, RotateCcw } from 'lucide-react';
+import { Play, Pause, Zap } from 'lucide-react';
 
 interface Props {
   original: AudioBuffer;

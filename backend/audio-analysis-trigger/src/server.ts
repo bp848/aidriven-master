@@ -14,7 +14,6 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
-const storage = new Storage();
 const pubsub = new PubSub();
 const PORT = process.env.PORT || 8080;
 
@@ -40,7 +39,7 @@ app.post('/trigger', async (req: any, res: any) => {
     }
 
     const eventData = JSON.parse(Buffer.from(message.data, 'base64').toString());
-    const { bucket, name, metadata } = eventData;
+    const { bucket, name } = eventData;
 
     if (!bucket || !name) {
         return res.status(400).send('Incomplete GCS event data');
