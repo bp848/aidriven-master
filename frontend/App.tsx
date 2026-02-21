@@ -42,6 +42,34 @@ export default function App() {
       }
     };
 
+    // 1. Initial Fetch
+    const checkInitialStatus = async () => {
+      const { data: job } = await supabase
+        .from('mastering_jobs')
+        .select('*')
+        .eq('id', activeJobId)
+        .single();
+
+      if (job) {
+        if (job.status === 'failed') {
+          setState(prev => ({ ...prev, step: 'idle', error: job.error_message }));
+          return;
+        }
+        const publicUrl = job.output_path ? job.output_path.replace('gs://', 'https://storage.googleapis.com/') : null;
+        setState(prev => ({
+          ...prev,
+          step: job.status as any,
+          analysis: job.metrics,
+          consensus: job.consensus_opinions,
+          finalParams: job.final_params,
+          outputUrl: publicUrl,
+          progress: job.status === 'analyzing' ? 40 : job.status === 'processing' ? 70 : job.status === 'completed' ? 100 : prev.progress
+        }));
+      }
+    };
+    checkInitialStatus();
+
+    // 2. Real-time Subscription
     const channel = supabase
       .channel(`job-${activeJobId}`)
       .on(
@@ -49,8 +77,6 @@ export default function App() {
         { event: 'UPDATE', schema: 'public', table: 'mastering_jobs', filter: `id=eq.${activeJobId}` },
         (payload) => {
           const job = payload.new;
-          console.log('Job Update:', job);
-
           const publicUrl = job.output_path ? job.output_path.replace('gs://', 'https://storage.googleapis.com/') : null;
 
           if (job.status === 'failed') {
@@ -58,7 +84,7 @@ export default function App() {
               ...prev,
               step: 'idle',
               progress: 0,
-              error: job.error_message || "Analysis failed. Our neural agents couldn't reach a consensus. Please try another track."
+              error: job.error_message || "Processing failed. Please try again."
             }));
             setActiveJobId(null);
             channel.unsubscribe();
@@ -72,7 +98,7 @@ export default function App() {
             consensus: job.consensus_opinions,
             finalParams: job.final_params,
             outputUrl: publicUrl,
-            error: null, // Clear any previous error if we got an update
+            error: null,
             progress: job.status === 'analyzing' ? 40 : job.status === 'processing' ? 70 : job.status === 'completed' ? 100 : prev.progress
           }));
 
