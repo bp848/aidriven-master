@@ -85,6 +85,7 @@ export const MasteringFlow: React.FC<Props> = ({ onComplete, isProcessing }) => 
                         </div>
 
                         <button
+                            type="button"
                             onClick={handleNext}
                             disabled={!email || !email.includes('@')}
                             className="w-full flex items-center justify-center gap-3 py-5 bg-blue-600 hover:bg-blue-700 disabled:opacity-30 disabled:hover:bg-blue-600 text-white font-black rounded-2xl transition-all uppercase tracking-widest text-sm group"
@@ -123,10 +124,15 @@ export const MasteringFlow: React.FC<Props> = ({ onComplete, isProcessing }) => 
                         </label>
 
                         <div className="flex gap-4">
-                            <button onClick={() => setStep('email')} className="flex-1 py-5 glass hover:bg-white/5 text-white font-bold rounded-2xl transition-all text-sm uppercase">
+                            <button
+                                type="button"
+                                onClick={() => setStep('email')}
+                                className="flex-1 py-5 glass hover:bg-white/5 text-white font-bold rounded-2xl transition-all text-sm uppercase"
+                            >
                                 Back
                             </button>
                             <button
+                                type="button"
                                 onClick={handleNext}
                                 disabled={!file}
                                 className="flex-[2] py-5 bg-blue-600 hover:bg-blue-700 disabled:opacity-30 text-white font-black rounded-2xl transition-all text-sm uppercase tracking-widest"
@@ -164,6 +170,7 @@ export const MasteringFlow: React.FC<Props> = ({ onComplete, isProcessing }) => 
 
                         <div className="flex gap-4">
                             <button
+                                type="button"
                                 onClick={() => setStep('upload')}
                                 disabled={isProcessing}
                                 className="flex-1 py-5 glass hover:bg-white/5 text-white font-bold rounded-2xl transition-all text-sm uppercase"
@@ -171,7 +178,11 @@ export const MasteringFlow: React.FC<Props> = ({ onComplete, isProcessing }) => 
                                 Modify
                             </button>
                             <button
-                                onClick={initiateMastering}
+                                type="button"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    initiateMastering();
+                                }}
                                 disabled={isProcessing}
                                 className="flex-[2] relative overflow-hidden py-5 bg-gradient-to-r from-blue-600 to-blue-400 hover:scale-[1.02] active:scale-95 text-white font-black rounded-2xl transition-all text-sm uppercase tracking-widest neon-glow shadow-blue-500/20"
                             >

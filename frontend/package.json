@@ -9,9 +9,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@google-cloud/storage": "^7.19.0",
     "@google/genai": "latest",
     "@supabase/supabase-js": "latest",
     "@tailwindcss/vite": "^4.2.0",
+    "@vercel/node": "^5.6.6",
     "d3": "latest",
     "lucide-react": "latest",
     "react": "latest",

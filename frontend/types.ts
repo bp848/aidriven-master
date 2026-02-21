@@ -32,4 +32,5 @@ export interface MasteringState {
   outputUrl: string | null;
   originalBuffer: AudioBuffer | null;
   masteredBuffer: AudioBuffer | null;
+  error: string | null;
 }

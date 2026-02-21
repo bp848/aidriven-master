@@ -5,8 +5,8 @@ import { MasteringFlow } from './components/MasteringFlow';
 import { AnalysisView } from './components/AnalysisView';
 import { AgentConsensus } from './components/AgentConsensus';
 import { AudioComparisonPlayer } from './components/AudioComparisonPlayer';
-import { MasteringState, MasteringParams } from './types';
-import { Download, RefreshCw, CheckCircle2, Loader2, Waves } from 'lucide-react';
+import { MasteringState } from './types';
+import { Download, RefreshCw, CheckCircle2, Loader2, Waves, AlertCircle } from 'lucide-react';
 import { supabase } from './services/supabaseClient';
 
 // Use direct functional component definition to avoid FC type issues
@@ -21,6 +21,7 @@ export default function App() {
     outputUrl: null,
     originalBuffer: null,
     masteredBuffer: null,
+    error: null,
   });
 
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
@@ -102,10 +103,21 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fileName: file.name, contentType: file.type, jobId: job.id }),
       });
-      const { url, path } = await response.json();
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(data?.error || `Server Error (${response.status})`);
+      }
+
+      if (!data) {
+        throw new Error("Invalid response: Server did not return JSON");
+      }
+
+      const { url, path } = data;
 
       // 3. Upload directly to GCS
-      await fetch(url, {
+      const uploadRes = await fetch(url, {
         method: 'PUT',
         headers: {
           'Content-Type': file.type,
@@ -114,14 +126,23 @@ export default function App() {
         body: file,
       });
 
+      if (!uploadRes.ok) {
+        throw new Error(`GCS Upload failed: ${uploadRes.status} ${uploadRes.statusText}`);
+      }
+
       // 4. Update job with the actual path
       await supabase.from('mastering_jobs').update({ input_path: path }).eq('id', job.id);
 
       setState((prev: MasteringState) => ({ ...prev, progress: 20 }));
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Mastering failed:", error);
-      setState((prev: MasteringState) => ({ ...prev, step: 'idle', progress: 0 }));
+      setState((prev: MasteringState) => ({
+        ...prev,
+        step: 'idle',
+        progress: 0,
+        error: error.message || "An unexpected error occurred. Please check your connection and environment variables."
+      }));
     }
   };
 
@@ -136,6 +157,7 @@ export default function App() {
       outputUrl: null,
       originalBuffer: null,
       masteredBuffer: null,
+      error: null,
     });
   };
 
@@ -161,6 +183,14 @@ export default function App() {
                 Our neural network negotiates the perfect tonal balance for your music.
               </p>
             </div>
+
+            {state.error && (
+              <div className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-2xl animate-in fade-in zoom-in duration-300">
+                <AlertCircle className="w-5 h-5 text-red-500" />
+                <p className="text-red-400 text-sm font-medium">{state.error}</p>
+                <button onClick={() => setState(p => ({ ...p, error: null }))} className="ml-4 text-red-500/50 hover:text-red-500">×</button>
+              </div>
+            )}
 
             <MasteringFlow onComplete={handleUpload} isProcessing={isProcessing} />
           </div>
