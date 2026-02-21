@@ -11,6 +11,7 @@
         "dev": "ts-node-dev --respawn --transpile-only src/server.ts"
     },
     "dependencies": {
+        "@eslint/js": "^9.39.3",
         "@google-cloud/pubsub": "^4.3.0",
         "@google-cloud/storage": "^7.7.0",
         "@google-cloud/vertexai": "^1.1.0",

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { AnalysisMetric } from '../types';
-import { Activity, Target, AlertTriangle, CheckCircle2, Info } from 'lucide-react';
+import { Activity, AlertTriangle, CheckCircle2, Info } from 'lucide-react';
 
 interface Props {
   metrics: AnalysisMetric[];

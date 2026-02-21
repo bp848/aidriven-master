@@ -6,12 +6,12 @@ import { AnalysisView } from './components/AnalysisView';
 import { AgentConsensus } from './components/AgentConsensus';
 import { AudioComparisonPlayer } from './components/AudioComparisonPlayer';
 import { MasteringState } from './types';
-import { Download, RefreshCw, CheckCircle2, Loader2, Waves, AlertCircle } from 'lucide-react';
+import { Download, RefreshCw, CheckCircle2, Waves, AlertCircle } from 'lucide-react';
 import { supabase } from './services/supabaseClient';
 
 // Use direct functional component definition to avoid FC type issues
 export default function App() {
-  const [state, setState] = useState<MasteringState>({
+  const idleState: MasteringState = {
     step: 'idle',
     progress: 0,
     fileName: null,
@@ -22,7 +22,12 @@ export default function App() {
     originalBuffer: null,
     masteredBuffer: null,
     error: null,
+  };
+
+  const [state, setState] = useState<MasteringState>({
+    ...idleState,
   });
+  const [submittedJob, setSubmittedJob] = useState<{ id: string; fileName: string } | null>(null);
 
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [audioContext] = useState(() => new (window.AudioContext || (window as any).webkitAudioContext)());
@@ -114,13 +119,17 @@ export default function App() {
   }, [activeJobId, audioContext]);
 
   const handleUpload = async (file: File, email: string) => {
+    setSubmittedJob(null);
     setState((prev: MasteringState) => ({ ...prev, step: 'uploading', progress: 5, fileName: file.name }));
 
     try {
-      // Decode locally for original player
-      const arrayBuffer = await file.arrayBuffer();
-      const originalBuffer = await audioContext.decodeAudioData(arrayBuffer);
-      setState(prev => ({ ...prev, originalBuffer }));
+      // Decode original audio in background so upload handoff is not blocked.
+      file
+        .arrayBuffer()
+        .then((arrayBuffer) => audioContext.decodeAudioData(arrayBuffer))
+        .then((decoded) => setState((prev) => ({ ...prev, originalBuffer: decoded })))
+        .catch((decodeError) => console.warn('Original decode skipped:', decodeError));
+
       // 1. Create Job in Supabase
       const { data: job, error: jobErr } = await supabase
         .from('mastering_jobs')
@@ -177,7 +186,9 @@ export default function App() {
 
       if (updateErr) throw updateErr;
 
-      setState((prev: MasteringState) => ({ ...prev, progress: 20 }));
+      setSubmittedJob({ id: job.id, fileName: file.name });
+      setActiveJobId(null);
+      setState({ ...idleState, step: 'submitted' });
 
     } catch (error: any) {
       console.error("Mastering failed:", error);
@@ -191,28 +202,18 @@ export default function App() {
   };
 
   const reset = () => {
-    setState({
-      step: 'idle',
-      progress: 0,
-      fileName: null,
-      analysis: null,
-      consensus: null,
-      finalParams: null,
-      outputUrl: null,
-      originalBuffer: null,
-      masteredBuffer: null,
-      error: null,
-    });
+    setState(idleState);
+    setSubmittedJob(null);
   };
 
-  const isProcessing = state.step !== 'idle' && state.step !== 'completed';
+  const isProcessing = state.step === 'uploading';
 
   return (
     <div className="min-h-screen pb-32 pt-24">
       <Header />
 
       <main className="max-w-7xl mx-auto px-8">
-        {state.step === 'idle' && (
+        {(state.step === 'idle' || state.step === 'uploading') && (
           <div className="flex flex-col items-center justify-center min-h-[70vh] text-center space-y-12">
             <div className="space-y-6 max-w-4xl">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass border-blue-500/20 text-blue-400 text-[10px] font-mono uppercase tracking-[0.3em] mb-4">
@@ -240,36 +241,25 @@ export default function App() {
           </div>
         )}
 
-        {(state.step !== 'idle' && state.step !== 'completed') && (
-          <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-12">
+        {state.step === 'submitted' && submittedJob && (
+          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-8">
             <div className="relative">
-              <div className="absolute -inset-10 bg-blue-500/10 rounded-full blur-[100px] animate-pulse"></div>
-              <div className="relative w-48 h-48 flex items-center justify-center">
-                <svg className="w-full h-full -rotate-90">
-                  <circle cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-white/5" />
-                  <circle cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="4" fill="transparent"
-                    strokeDasharray={552} strokeDashoffset={552 - (552 * state.progress) / 100}
-                    className="text-blue-500 transition-all duration-1000 ease-out" />
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <Loader2 className="w-10 h-10 text-blue-400 animate-spin mb-2" />
-                  <span className="text-2xl font-black text-white mono">{state.progress}%</span>
-                </div>
+              <div className="absolute -inset-6 bg-emerald-500/20 rounded-full blur-2xl"></div>
+              <div className="relative p-5 bg-emerald-500/10 rounded-full border border-emerald-500/40">
+                <CheckCircle2 className="w-10 h-10 text-emerald-300" />
               </div>
             </div>
-            <div className="text-center space-y-3">
-              <h3 className="text-3xl font-bold text-white uppercase tracking-widest">
-                {state.step === 'uploading' && 'GCS Ingestion'}
-                {state.step === 'analyzing' && 'Neural Spectral Scan'}
-                {state.step === 'consensus' && 'Agent Deliberation'}
-                {state.step === 'processing' && 'DSP Matrix Rendering'}
-              </h3>
-              <p className="text-blue-400 font-mono text-xs uppercase tracking-[0.5em] animate-pulse">
-                {state.step === 'analyzing' && 'Scanning 20 critical spectral nodes...'}
-                {state.step === 'consensus' && 'Negotiating dynamic range & saturation...'}
-                {state.step === 'processing' && 'Applying Hybrid-Analog Neuro Chain...'}
+            <div className="max-w-2xl space-y-3">
+              <h3 className="text-3xl font-black text-white uppercase tracking-widest">Upload Accepted</h3>
+              <p className="text-sm text-emerald-100/80">
+                Your track has been queued. You can leave this page now, and we will email the result when mastering finishes.
               </p>
+              <p className="text-xs text-emerald-200/70 font-mono">{submittedJob.fileName}</p>
+              <p className="text-[10px] text-emerald-200/50 font-mono">Job ID: {submittedJob.id}</p>
             </div>
+            <button onClick={reset} className="px-8 py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold uppercase tracking-wider">
+              Upload Next Track
+            </button>
           </div>
         )}
 
