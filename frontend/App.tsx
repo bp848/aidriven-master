@@ -21,6 +21,7 @@ export default function App() {
     outputUrl: null,
     originalBuffer: null,
     masteredBuffer: null,
+    userEmail: null,
     error: null,
   });
 
@@ -63,7 +64,8 @@ export default function App() {
           consensus: job.consensus_opinions,
           finalParams: job.final_params,
           outputUrl: publicUrl,
-          progress: job.status === 'analyzing' ? 40 : job.status === 'processing' ? 70 : job.status === 'completed' ? 100 : prev.progress
+          userEmail: job.user_email,
+          progress: job.status === 'completed' ? 100 : 20
         }));
       }
     };
@@ -98,8 +100,9 @@ export default function App() {
             consensus: job.consensus_opinions,
             finalParams: job.final_params,
             outputUrl: publicUrl,
+            userEmail: job.user_email,
             error: null,
-            progress: job.status === 'analyzing' ? 40 : job.status === 'processing' ? 70 : job.status === 'completed' ? 100 : prev.progress
+            progress: job.status === 'completed' ? 100 : 20
           }));
 
           if (job.status === 'completed' && publicUrl) {
@@ -114,7 +117,7 @@ export default function App() {
   }, [activeJobId, audioContext]);
 
   const handleUpload = async (file: File, email: string) => {
-    setState((prev: MasteringState) => ({ ...prev, step: 'uploading', progress: 5, fileName: file.name }));
+    setState((prev: MasteringState) => ({ ...prev, step: 'uploading', progress: 5, fileName: file.name, userEmail: email }));
 
     try {
       // Decode locally for original player
@@ -240,7 +243,7 @@ export default function App() {
           </div>
         )}
 
-        {(state.step !== 'idle' && state.step !== 'completed') && (
+        {state.step === 'uploading' && (
           <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-12">
             <div className="relative">
               <div className="absolute -inset-10 bg-blue-500/10 rounded-full blur-[100px] animate-pulse"></div>
@@ -258,17 +261,74 @@ export default function App() {
               </div>
             </div>
             <div className="text-center space-y-3">
-              <h3 className="text-3xl font-bold text-white uppercase tracking-widest">
-                {state.step === 'uploading' && 'GCS Ingestion'}
-                {state.step === 'analyzing' && 'Neural Spectral Scan'}
-                {state.step === 'consensus' && 'Agent Deliberation'}
-                {state.step === 'processing' && 'DSP Matrix Rendering'}
-              </h3>
+              <h3 className="text-3xl font-bold text-white uppercase tracking-widest italic">GCS Ingestion</h3>
               <p className="text-blue-400 font-mono text-xs uppercase tracking-[0.5em] animate-pulse">
-                {state.step === 'analyzing' && 'Scanning 20 critical spectral nodes...'}
-                {state.step === 'consensus' && 'Negotiating dynamic range & saturation...'}
-                {state.step === 'processing' && 'Applying Hybrid-Analog Neuro Chain...'}
+                Sending raw spectral data to matrix...
               </p>
+            </div>
+          </div>
+        )}
+
+        {(['analyzing', 'consensus', 'processing'].includes(state.step)) && (
+          <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-12 max-w-4xl mx-auto">
+            <div className="glass p-12 rounded-[3rem] border-blue-500/30 text-center space-y-8 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 via-cyan-400 to-blue-600 animate-shimmer"></div>
+
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-mono uppercase tracking-[0.3em]">
+                <CheckCircle2 className="w-3 h-3" /> Source Ingested Successfully
+              </div>
+
+              <div className="space-y-4">
+                <h2 className="text-5xl font-black text-white tracking-tighter">MISSION RECEIVED.</h2>
+                <p className="text-gray-400 text-lg leading-relaxed max-w-xl mx-auto">
+                  Our neural agents are now negotiating the optimal spectral balance for your track.
+                  <span className="text-white block mt-4 font-bold">You can safely close this window.</span>
+                </p>
+              </div>
+
+              <div className="p-8 bg-blue-500/5 border border-white/5 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="text-left">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Target Address</p>
+                  <p className="text-white font-mono">{state.userEmail || 'Your Inbox'}</p>
+                </div>
+                <div className="h-px md:h-8 w-full md:w-px bg-white/10"></div>
+                <div className="text-right">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">ETA Delivery</p>
+                  <p className="text-blue-400 font-mono">≈ 120 Seconds</p>
+                </div>
+              </div>
+
+              <div className="pt-8 border-t border-white/5 space-y-8">
+                <div className="bg-red-500/5 border border-red-500/20 p-6 rounded-2xl text-center">
+                  <p className="text-gray-400 text-sm">
+                    <span className="text-red-400 font-bold">STUCK?</span> If you don't receive an email within 15 minutes, the system may have encountered a spectral anomaly.
+                    Please <button onClick={reset} className="text-blue-400 underline hover:text-blue-300">try again</button> or report the Job ID to our AI Support.
+                  </p>
+                  <p className="text-[10px] font-mono text-gray-600 mt-2 uppercase tracking-widest">Job ID: {activeJobId}</p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-widest mb-6">Upgrade to Studio Grade</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="glass-vibrant p-6 rounded-2xl border-white/10 hover:border-blue-500/30 transition-all cursor-pointer group">
+                      <h4 className="text-white font-black text-xl mb-1 group-hover:text-blue-400">PRO SINGLE</h4>
+                      <p className="text-gray-500 text-xs mb-4 uppercase">24-bit 96kHz + AI Insight</p>
+                      <div className="text-2xl font-black text-white">$9.99</div>
+                    </div>
+                    <div className="bg-gradient-to-br from-blue-600 to-blue-900 p-6 rounded-2xl border border-blue-400/30 shadow-2xl hover:scale-105 transition-all cursor-pointer">
+                      <h4 className="text-white font-black text-xl mb-1">PRO ALBUM</h4>
+                      <p className="text-blue-200 text-xs mb-4 uppercase">10 Tracks + Sonic Match</p>
+                      <div className="text-2xl font-black text-white">$79.99</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-center pt-4">
+                  <button onClick={reset} className="flex items-center gap-2 px-6 py-3 glass hover:bg-white/5 rounded-xl transition-all text-xs font-bold text-gray-400 uppercase tracking-widest">
+                    <RefreshCw className="w-4 h-4" /> Start New Session
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}

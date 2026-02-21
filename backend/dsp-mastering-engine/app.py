@@ -171,8 +171,17 @@ async def process_audio_internal(request: MasteringRequest):
         }
 
     except Exception as e:
-        print(f"Error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        error_msg = str(e)
+        print(f"Error: {error_msg}")
+        if request.jobId and supabase:
+            try:
+                supabase.table("mastering_jobs").update({
+                    "status": "failed",
+                    "error_message": f"DSP Engine Error: {error_msg}"
+                }).eq("id", request.jobId).execute()
+            except Exception as db_err:
+                print(f"Failed to update error in Supabase: {str(db_err)}")
+        raise HTTPException(status_code=500, detail=error_msg)
 
 if __name__ == "__main__":
     import uvicorn
