@@ -204,6 +204,7 @@ export default function App() {
       outputUrl: null,
       originalBuffer: null,
       masteredBuffer: null,
+      userEmail: null,
       error: null,
     });
   };
