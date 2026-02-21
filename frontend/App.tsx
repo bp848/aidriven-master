@@ -107,14 +107,14 @@ export default function App() {
       const data = await response.json().catch(() => null);
 
       if (!response.ok) {
-        throw new Error(data?.error || `Server Error (${response.status})`);
+        throw new Error(data?.error || `Server Error (${response.status}): The upload service is currently unavailable.`);
       }
 
-      if (!data) {
-        throw new Error("Invalid response: Server did not return JSON");
+      if (!data || !data.url) {
+        throw new Error("Invalid server response: Missing signed upload URL.");
       }
 
-      const { url, path } = data;
+      const { url, path: remotePath } = data;
 
       // 3. Upload directly to GCS
       const uploadRes = await fetch(url, {
@@ -130,8 +130,13 @@ export default function App() {
         throw new Error(`GCS Upload failed: ${uploadRes.status} ${uploadRes.statusText}`);
       }
 
-      // 4. Update job with the actual path
-      await supabase.from('mastering_jobs').update({ input_path: path }).eq('id', job.id);
+      // 4. Update job with the actual path in Supabase
+      const { error: updateErr } = await supabase
+        .from('mastering_jobs')
+        .update({ input_path: remotePath })
+        .eq('id', job.id);
+
+      if (updateErr) throw updateErr;
 
       setState((prev: MasteringState) => ({ ...prev, progress: 20 }));
 

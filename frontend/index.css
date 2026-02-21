@@ -33,6 +33,11 @@
     box-shadow: 0 0 20px rgba(0, 242, 255, 0.1);
   }
 
+  .neon-glow {
+    box-shadow: 0 0 20px rgba(0, 242, 255, 0.4);
+    border: 1px solid rgba(0, 242, 255, 0.5);
+  }
+
   .cyber-grid {
     background-image: linear-gradient(rgba(0, 242, 255, 0.05) 1px, transparent 1px),
       linear-gradient(90deg, rgba(0, 242, 255, 0.05) 1px, transparent 1px);
@@ -59,5 +64,27 @@
 
   .glow-text {
     text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
+  }
+}
+
+@utility btn-glow {
+  box-shadow: 0 0 15px var(--color-neon-blue);
+  animation: pulse-glow 2s infinite;
+}
+
+@keyframes pulse-glow {
+  0% {
+    box-shadow: 0 0 5px rgba(0, 242, 255, 0.2);
+    transform: scale(1);
+  }
+
+  50% {
+    box-shadow: 0 0 20px rgba(0, 242, 255, 0.6);
+    transform: scale(1.02);
+  }
+
+  100% {
+    box-shadow: 0 0 5px rgba(0, 242, 255, 0.2);
+    transform: scale(1);
   }
 }

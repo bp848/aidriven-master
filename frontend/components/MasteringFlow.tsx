@@ -88,7 +88,10 @@ export const MasteringFlow: React.FC<Props> = ({ onComplete, isProcessing }) => 
                             type="button"
                             onClick={handleNext}
                             disabled={!email || !email.includes('@')}
-                            className="w-full flex items-center justify-center gap-3 py-5 bg-blue-600 hover:bg-blue-700 disabled:opacity-30 disabled:hover:bg-blue-600 text-white font-black rounded-2xl transition-all uppercase tracking-widest text-sm group"
+                            className={`w-full flex items-center justify-center gap-3 py-5 font-black rounded-2xl transition-all uppercase tracking-widest text-sm group ${email && email.includes('@')
+                                    ? 'bg-blue-600 text-white btn-glow scale-100'
+                                    : 'bg-white/5 text-gray-600 opacity-30'
+                                }`}
                         >
                             Confirm Delivery Address <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                         </button>
@@ -107,18 +110,21 @@ export const MasteringFlow: React.FC<Props> = ({ onComplete, isProcessing }) => 
 
                         <label className={`
               flex flex-col items-center justify-center w-full h-48 rounded-2xl border-2 border-dashed transition-all cursor-pointer
-              ${file ? 'bg-blue-500/5 border-blue-500/30' : 'bg-white/5 border-white/10 hover:border-blue-500/30 hover:bg-white/[0.08]'}
+              ${file ? 'bg-blue-500/5 border-blue-500/40 neon-glow' : 'bg-white/5 border-white/10 hover:border-blue-500/30 hover:bg-white/[0.08]'}
             `}>
                             <input type="file" className="hidden" accept="audio/*" onChange={handleFileChange} />
                             {file ? (
                                 <div className="flex flex-col items-center gap-2">
-                                    <Music className="w-10 h-10 text-blue-400" />
+                                    <div className="bg-blue-500/20 p-3 rounded-full animate-bounce">
+                                        <Music className="w-8 h-8 text-blue-400" />
+                                    </div>
                                     <span className="text-white font-mono text-sm">{file.name}</span>
+                                    <span className="text-green-500 text-[10px] uppercase font-bold tracking-widest">File Ready</span>
                                 </div>
                             ) : (
-                                <div className="flex flex-col items-center gap-2">
-                                    <Upload className="w-10 h-10 text-gray-500" />
-                                    <span className="text-gray-500 text-sm">Tap to select or drop audio</span>
+                                <div className="flex flex-col items-center gap-2 text-gray-500">
+                                    <Upload className="w-10 h-10 group-hover:text-blue-400 transition-colors" />
+                                    <span className="text-sm">Tap to select or drop audio</span>
                                 </div>
                             )}
                         </label>
@@ -135,7 +141,10 @@ export const MasteringFlow: React.FC<Props> = ({ onComplete, isProcessing }) => 
                                 type="button"
                                 onClick={handleNext}
                                 disabled={!file}
-                                className="flex-[2] py-5 bg-blue-600 hover:bg-blue-700 disabled:opacity-30 text-white font-black rounded-2xl transition-all text-sm uppercase tracking-widest"
+                                className={`flex-[2] py-5 font-black rounded-2xl transition-all text-sm uppercase tracking-widest ${file
+                                        ? 'bg-blue-600 text-white btn-glow scale-100'
+                                        : 'bg-white/5 text-gray-600 opacity-30 shadow-none'
+                                    }`}
                             >
                                 Proceed to Mastering
                             </button>
@@ -156,7 +165,7 @@ export const MasteringFlow: React.FC<Props> = ({ onComplete, isProcessing }) => 
                         <div className="p-6 bg-blue-500/5 border border-blue-500/20 rounded-2xl space-y-4">
                             <div className="flex items-center justify-between text-xs font-mono uppercase tracking-widest text-blue-400">
                                 <span>Ingestion System</span>
-                                <span>Active</span>
+                                <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" /> Active</span>
                             </div>
                             <div className="flex items-center justify-between text-sm">
                                 <span className="text-gray-500">Selected Track</span>
@@ -184,7 +193,10 @@ export const MasteringFlow: React.FC<Props> = ({ onComplete, isProcessing }) => 
                                     initiateMastering();
                                 }}
                                 disabled={isProcessing}
-                                className="flex-[2] relative overflow-hidden py-5 bg-gradient-to-r from-blue-600 to-blue-400 hover:scale-[1.02] active:scale-95 text-white font-black rounded-2xl transition-all text-sm uppercase tracking-widest neon-glow shadow-blue-500/20"
+                                className={`flex-[2] relative overflow-hidden py-5 text-white font-black rounded-2xl transition-all text-sm uppercase tracking-widest ${isProcessing
+                                        ? 'bg-blue-900 opacity-50 cursor-not-allowed'
+                                        : 'bg-gradient-to-r from-blue-600 to-blue-400 btn-glow'
+                                    }`}
                             >
                                 {isProcessing ? (
                                     <div className="flex items-center justify-center gap-3">
