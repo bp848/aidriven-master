@@ -78,49 +78,55 @@ export default function App() {
     return () => { channel.unsubscribe(); };
   }, [activeJobId, audioContext]);
 
+  const SUPABASE_FUNCTIONS_URL = import.meta.env.VITE_SUPABASE_URL + '/functions/v1';
+
   const handleUpload = async (file: File, email: string) => {
     setState(prev => ({ ...prev, step: 'uploading', progress: 5, fileName: file.name, userEmail: email }));
     try {
-      const { data: job, error: jobErr } = await supabase
-        .from('mastering_jobs')
-        .insert({ file_name: file.name, status: 'uploading', input_path: '', user_email: email })
-        .select().single();
-      if (jobErr) throw jobErr;
-      setActiveJobId(job.id);
+      // ── 1. Get signed upload URL + create job (via Edge Function, no Vercel service role needed) ──
+      const urlRes = await fetch(`${SUPABASE_FUNCTIONS_URL}/get-upload-url`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName: file.name, fileSize: file.size, userEmail: email }),
+      });
+      const urlData = await urlRes.json().catch(() => null);
+      if (!urlRes.ok) throw new Error(urlData?.error || `get-upload-url error (${urlRes.status})`);
+      const { jobId, uploadUrl } = urlData as { jobId: string; uploadUrl: string; storagePath: string };
 
+      setActiveJobId(jobId);
+
+      // Decode for A/B player (non-blocking)
       file.arrayBuffer()
         .then(buf => audioContext.decodeAudioData(buf))
         .then(decoded => setState(prev => ({ ...prev, originalBuffer: decoded })))
         .catch(e => console.error('Decode:', e));
 
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileName: file.name, contentType: file.type, jobId: job.id }),
-      });
-      const data = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(data?.error || `Server Error (${response.status})`);
-      if (!data?.url) throw new Error('Missing signed upload URL');
-
-      // Upload to Supabase Storage via signed URL (PUT)
-      const { url } = data;
-      const uploadRes = await fetch(url, {
+      // ── 2. Upload file to Supabase Storage ──────────────────────────────────
+      setState(prev => ({ ...prev, progress: 30 }));
+      const uploadRes = await fetch(uploadUrl, {
         method: 'PUT',
         headers: { 'Content-Type': file.type },
         body: file,
       });
-      if (!uploadRes.ok) throw new Error(`Upload failed: ${uploadRes.status}`);
+      if (!uploadRes.ok) throw new Error(`Storage upload failed: ${uploadRes.status}`);
 
-      // process-mastering Edge Function triggered server-side (fire-and-forget)
-      // DB trigger auto-sends email when status = 'completed'
-      setSubmittedJob({ id: job.id, fileName: file.name });
-      setActiveJobId(job.id); // stay subscribed for realtime status updates
-      setState(prev => ({ ...prev, step: 'analyzing', progress: 20 }));
+      setState(prev => ({ ...prev, progress: 60 }));
+
+      // ── 3. Kick off mastering (fire-and-forget, Edge Function handles completion + email) ──
+      fetch(`${SUPABASE_FUNCTIONS_URL}/process-mastering`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ job_id: jobId }),
+      }).catch(e => console.error('process-mastering:', e));
+
+      setSubmittedJob({ id: jobId, fileName: file.name });
+      setState(prev => ({ ...prev, step: 'analyzing', progress: 70 }));
     } catch (error: any) {
       console.error(error);
       setState(prev => ({ ...prev, step: 'idle', progress: 0, error: error.message }));
     }
   };
+
 
   const reset = () => { setSubmittedJob(null); setActiveJobId(null); setState({ ...idleState }); };
 
