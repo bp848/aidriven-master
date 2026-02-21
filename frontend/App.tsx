@@ -7,7 +7,7 @@ import { AgentConsensus } from './components/AgentConsensus';
 import { AudioComparisonPlayer } from './components/AudioComparisonPlayer';
 import { AlgorithmPage } from './components/AlgorithmPage';
 import { MasteringState } from './types';
-import { Download, RefreshCw, CheckCircle2, AlertCircle, Mail, Clock, Loader2 } from 'lucide-react';
+import { Download, CheckCircle2, AlertCircle, Mail, Clock, Loader2 } from 'lucide-react';
 import { supabase } from './services/supabaseClient';
 
 const idleState: MasteringState = {
@@ -272,7 +272,7 @@ export default function App() {
             )}
 
             {/* Upload form */}
-            <MasteringFlow onComplete={handleUpload} isProcessing={state.step === 'uploading'} />
+            <MasteringFlow onComplete={handleUpload} isProcessing={false} />
           </div>
         </div>
       )}
