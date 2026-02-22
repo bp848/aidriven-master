@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Header } from './components/Header';
 import { MasteringFlow } from './components/MasteringFlow';
@@ -83,7 +82,6 @@ export default function App() {
   const handleUpload = async (file: File, email: string) => {
     setState(prev => ({ ...prev, step: 'uploading', progress: 5, fileName: file.name, userEmail: email }));
     try {
-      // ── 1. Get signed upload URL + create job (via Edge Function, no Vercel service role needed) ──
       const urlRes = await fetch(`${SUPABASE_FUNCTIONS_URL}/get-upload-url`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -95,13 +93,11 @@ export default function App() {
 
       setActiveJobId(jobId);
 
-      // Decode for A/B player (non-blocking)
       file.arrayBuffer()
         .then(buf => audioContext.decodeAudioData(buf))
         .then(decoded => setState(prev => ({ ...prev, originalBuffer: decoded })))
         .catch(e => console.error('Decode:', e));
 
-      // ── 2. Upload file to Supabase Storage ──────────────────────────────────
       setState(prev => ({ ...prev, progress: 30 }));
       const uploadRes = await fetch(uploadUrl, {
         method: 'PUT',
@@ -112,7 +108,6 @@ export default function App() {
 
       setState(prev => ({ ...prev, progress: 60 }));
 
-      // ── 3. Kick off mastering (fire-and-forget, Edge Function handles completion + email) ──
       fetch(`${SUPABASE_FUNCTIONS_URL}/process-mastering`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -127,7 +122,6 @@ export default function App() {
     }
   };
 
-
   const reset = () => { setSubmittedJob(null); setActiveJobId(null); setState({ ...idleState }); };
 
   // ── Uploading ──────────────────────────────────────────────────────────────
@@ -136,18 +130,18 @@ export default function App() {
       <div className="h-screen flex flex-col surface-0 dot-grid">
         <Header page={page} onNav={setPage} />
         <div className="flex-1 flex items-center justify-center">
-          <div className="w-80 space-y-5 animate-in">
+          <div className="w-80 flex flex-col gap-5 animate-in">
             <div className="flex items-center gap-3">
-              <Loader2 className="w-4 h-4 text-[#666] animate-spin-slow flex-none" strokeWidth={1.5} />
+              <Loader2 className="w-4 h-4 text-muted-foreground animate-spin-slow flex-none" strokeWidth={1.5} />
               <div className="min-w-0">
                 <p className="label">Uploading</p>
-                <p className="text-sm text-white truncate">{state.fileName}</p>
+                <p className="text-sm text-foreground truncate">{state.fileName}</p>
               </div>
             </div>
             <div className="progress-track">
               <div className="progress-fill" style={{ width: `${state.progress}%` }} />
             </div>
-            <p className="mono text-[#444]">{state.progress}% complete</p>
+            <p className="mono text-muted-foreground/60">{state.progress}% complete</p>
           </div>
         </div>
       </div>
@@ -160,35 +154,35 @@ export default function App() {
       <div className="h-screen flex flex-col surface-0 dot-grid">
         <Header page={page} onNav={setPage} />
         <div className="flex-1 flex items-center justify-center">
-          <div className="surface-1 rounded-xl p-8 w-96 space-y-6 animate-in">
+          <div className="surface-1 rounded-xl p-8 w-96 flex flex-col gap-5 animate-in">
             <div className="flex items-start gap-3">
               <span className="status-dot status-busy mt-1.5 flex-none" />
               <div>
-                <p className="text-sm font-semibold text-white mb-0.5">Mastering in progress</p>
-                <p className="text-[#666] text-xs leading-relaxed">
-                  You can close this tab. We'll send the result to your email when it's done.
+                <p className="text-sm font-semibold text-foreground mb-0.5">Mastering in progress</p>
+                <p className="text-muted-foreground text-xs leading-relaxed">
+                  You can close this tab. We{"'"}ll send the result to your email when it{"'"}s done.
                 </p>
               </div>
             </div>
             <div className="divider" />
-            <div className="space-y-2.5">
+            <div className="flex flex-col gap-2.5">
               <div className="flex items-center justify-between">
-                <span className="flex items-center gap-2 mono text-[#555]"><Mail className="w-3 h-3" /> Deliver to</span>
-                <span className="mono text-[#aaa] truncate max-w-[180px]">{state.userEmail}</span>
+                <span className="flex items-center gap-2 mono text-muted-foreground"><Mail className="w-3 h-3" /> Deliver to</span>
+                <span className="mono text-foreground/70 truncate max-w-[180px]">{state.userEmail}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="flex items-center gap-2 mono text-[#555]"><Clock className="w-3 h-3" /> ETA</span>
-                <span className="mono text-[#aaa]">~2 min</span>
+                <span className="flex items-center gap-2 mono text-muted-foreground"><Clock className="w-3 h-3" /> ETA</span>
+                <span className="mono text-foreground/70">~2 min</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="mono text-[#444]">Job ID</span>
-                <span className="mono text-[#444] truncate max-w-[200px]">{activeJobId}</span>
+                <span className="mono text-muted-foreground/50">Job ID</span>
+                <span className="mono text-muted-foreground/50 truncate max-w-[200px]">{activeJobId}</span>
               </div>
             </div>
             <div className="divider" />
-            <p className="mono text-[#444]">
+            <p className="mono text-muted-foreground/50">
               No email after 15 min?{' '}
-              <button onClick={reset} className="text-[#888] underline hover:text-white transition-colors">Try again</button>
+              <button onClick={reset} className="text-foreground/60 underline hover:text-foreground transition-colors">Try again</button>
             </p>
           </div>
         </div>
@@ -201,10 +195,10 @@ export default function App() {
     return (
       <div className="h-screen flex flex-col surface-0">
         {/* Toolbar */}
-        <div className="flex-none h-11 surface-1 border-b border-[#1f1f1f] flex items-center justify-between px-5">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-[#22c55e]" strokeWidth={1.5} />
-            <span className="text-sm font-medium text-white">{state.fileName}</span>
+        <div className="flex-none h-12 bg-card border-b border-border flex items-center justify-between px-5">
+          <div className="flex items-center gap-2.5">
+            <CheckCircle2 className="w-4 h-4 text-success" strokeWidth={1.5} />
+            <span className="text-sm font-semibold text-foreground">{state.fileName}</span>
             <span className="tag tag-green">Complete</span>
           </div>
           <div className="flex items-center gap-2">
@@ -219,7 +213,7 @@ export default function App() {
 
         {/* Scrollable results */}
         <div className="flex-1 overflow-y-auto p-6">
-          <div className="max-w-4xl mx-auto space-y-6">
+          <div className="max-w-4xl mx-auto flex flex-col gap-6">
             {state.originalBuffer && state.masteredBuffer && (
               <AudioComparisonPlayer original={state.originalBuffer} mastered={state.masteredBuffer} />
             )}
@@ -242,37 +236,37 @@ export default function App() {
         <AlgorithmPage />
       ) : (
         <div className="flex-1 flex flex-col items-center justify-center px-6">
-          <div className="w-full max-w-sm space-y-6 animate-in">
+          <div className="w-full max-w-lg flex flex-col gap-6 animate-in">
 
             {/* Title */}
-            <div>
-              <p className="label mb-2">AI Audio Mastering</p>
-              <h1 className="text-2xl font-semibold text-white tracking-tight leading-snug">
-                Beatport Top 10 — standard.<br />
-                <span className="text-[#555]">Upload. We master. You download.</span>
+            <div className="text-center">
+              <p className="label mb-3">AI Audio Mastering</p>
+              <h1 className="text-3xl font-bold text-foreground tracking-tight leading-snug text-balance">
+                Beatport Top 10 standard.
               </h1>
+              <p className="text-muted-foreground mt-2 text-sm">Upload your track. AI masters it. You download.</p>
             </div>
 
             {/* Submitted notice */}
             {submittedJob && (
               <div className="surface-1 rounded-lg p-4 flex items-start gap-3">
-                <CheckCircle2 className="w-4 h-4 text-[#22c55e] mt-0.5 flex-none" strokeWidth={1.5} />
+                <CheckCircle2 className="w-4 h-4 text-success mt-0.5 flex-none" strokeWidth={1.5} />
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-white truncate">{submittedJob.fileName}</p>
-                  <p className="mono text-[#555] mt-0.5">Queued — check email in ~2 min</p>
-                  <p className="mono text-[#333] mt-1">{submittedJob.id}</p>
+                  <p className="text-sm font-medium text-foreground truncate">{submittedJob.fileName}</p>
+                  <p className="mono text-muted-foreground mt-0.5">Queued -- check email in ~2 min</p>
+                  <p className="mono text-muted-foreground/40 mt-1">{submittedJob.id}</p>
                 </div>
               </div>
             )}
 
             {/* Error */}
             {state.error && (
-              <div className="surface-1 rounded-lg p-4 flex items-start gap-3 border border-red-500/20">
-                <AlertCircle className="w-4 h-4 text-[#f87171] mt-0.5 flex-none" strokeWidth={1.5} />
+              <div className="surface-1 rounded-lg p-4 flex items-start gap-3 border-destructive/20">
+                <AlertCircle className="w-4 h-4 text-destructive mt-0.5 flex-none" strokeWidth={1.5} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-[#f87171]">{state.error}</p>
+                  <p className="text-sm text-destructive">{state.error}</p>
                 </div>
-                <button onClick={() => setState(p => ({ ...p, error: null }))} className="text-[#444] hover:text-[#999] text-base leading-none">×</button>
+                <button onClick={() => setState(p => ({ ...p, error: null }))} className="text-muted-foreground hover:text-foreground text-base leading-none">x</button>
               </div>
             )}
 
@@ -283,19 +277,19 @@ export default function App() {
       )}
 
       {/* Status bar */}
-      <div className="flex-none h-7 surface-1 border-t border-[#1f1f1f] flex items-center justify-between px-5">
+      <div className="flex-none h-8 bg-card border-t border-border flex items-center justify-between px-5">
         <div className="flex items-center gap-5">
-          <span className="flex items-center gap-1.5 mono text-[#444]">
+          <span className="flex items-center gap-1.5 mono text-muted-foreground/60">
             <span className="status-dot status-online" /> GCS
           </span>
-          <span className="flex items-center gap-1.5 mono text-[#444]">
-            <span className="status-dot" style={{ background: '#818cf8' }} /> Gemini 2.5-Flash
+          <span className="flex items-center gap-1.5 mono text-muted-foreground/60">
+            <span className="status-dot" style={{ background: '#3b82f6', boxShadow: '0 0 6px rgba(59,130,246,0.4)' }} /> Gemini 2.5-Flash
           </span>
-          <span className="flex items-center gap-1.5 mono text-[#444]">
-            <span className="status-dot" style={{ background: '#22c55e' }} /> Supabase
+          <span className="flex items-center gap-1.5 mono text-muted-foreground/60">
+            <span className="status-dot status-online" /> Supabase
           </span>
         </div>
-        <span className="mono text-[#333]">NEURO-MASTER · Hybrid-Analog DSP Engine</span>
+        <span className="mono text-muted-foreground/40">NEURO-MASTER / Hybrid-Analog DSP Engine</span>
       </div>
     </div>
   );

@@ -1,12 +1,32 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @theme {
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  --color-background: #09090b;
+  --color-foreground: #fafafa;
+  --color-muted: #18181b;
+  --color-muted-foreground: #71717a;
+  --color-card: #0f0f12;
+  --color-card-foreground: #fafafa;
+  --color-border: #27272a;
+  --color-input: #27272a;
+  --color-ring: #3b82f6;
+  --color-primary: #3b82f6;
+  --color-primary-foreground: #fafafa;
+  --color-secondary: #18181b;
+  --color-secondary-foreground: #fafafa;
+  --color-accent: #f97316;
+  --color-accent-foreground: #fafafa;
+  --color-destructive: #ef4444;
+  --color-success: #22c55e;
+
+  --radius: 0.5rem;
 }
 
 @layer base {
-
   *,
   *::before,
   *::after {
@@ -22,220 +42,118 @@
   }
 
   body {
-    background: #0d0d0d;
-    color: #e5e5e5;
+    background: var(--color-background);
+    color: var(--color-foreground);
     font-family: var(--font-sans);
-    font-size: 13px;
-    line-height: 1.5;
+    font-size: 14px;
+    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     overflow: hidden;
   }
 
   input,
-  button {
+  button,
+  textarea {
     font-family: inherit;
+  }
+
+  ::selection {
+    background: var(--color-primary);
+    color: var(--color-primary-foreground);
   }
 }
 
 /* ── Surfaces ── */
-.surface-0 {
-  background: #0d0d0d;
-}
+.surface-0 { background: var(--color-background); }
+.surface-1 { background: var(--color-card); border: 1px solid var(--color-border); }
+.surface-2 { background: var(--color-muted); border: 1px solid var(--color-border); }
+.surface-3 { background: #1c1c22; border: 1px solid #2e2e35; }
 
-.surface-1 {
-  background: #141414;
-  border: 1px solid #1f1f1f;
-}
-
-.surface-2 {
-  background: #1a1a1a;
-  border: 1px solid #262626;
-}
-
-.surface-3 {
-  background: #212121;
-  border: 1px solid #2e2e2e;
+.glass {
+  background: rgba(15, 15, 18, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 /* ── Typography ── */
-.label {
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #666;
-}
-
-.mono {
-  font-family: var(--font-mono);
-  font-size: 11px;
-}
+.label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-muted-foreground); }
+.mono { font-family: var(--font-mono); font-size: 11px; }
 
 /* ── Interactive ── */
 .btn-primary {
-  background: #fff;
-  color: #0d0d0d;
+  background: var(--color-foreground);
+  color: var(--color-background);
   border: none;
-  border-radius: 6px;
-  padding: 7px 16px;
+  border-radius: var(--radius);
+  padding: 8px 20px;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: all 0.2s ease;
 }
-
-.btn-primary:hover {
-  background: #e5e5e5;
-}
+.btn-primary:hover { background: #e4e4e7; transform: translateY(-1px); }
 
 .btn-secondary {
   background: transparent;
-  color: #999;
-  border: 1px solid #2e2e2e;
-  border-radius: 6px;
-  padding: 7px 16px;
+  color: #a1a1aa;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 8px 20px;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
+  transition: all 0.2s ease;
 }
+.btn-secondary:hover { border-color: #52525b; color: var(--color-foreground); background: rgba(255, 255, 255, 0.03); }
 
-.btn-secondary:hover {
-  border-color: #444;
-  color: #e5e5e5;
-}
-
-/* ── Grid accent ── */
+/* ── Dot grid accent ── */
 .dot-grid {
-  background-image: radial-gradient(circle, #2a2a2a 1px, transparent 1px);
-  background-size: 24px 24px;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
 }
 
-/* ── Tag / Badge ── */
-.tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-}
+/* ── Tags ── */
+.tag { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 500; letter-spacing: 0.04em; }
+.tag-green { background: rgba(34, 197, 94, 0.1); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.15); }
+.tag-blue { background: rgba(59, 130, 246, 0.1); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.15); }
+.tag-amber { background: rgba(251, 191, 36, 0.1); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.12); }
+.tag-red { background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.12); }
+.tag-gray { background: rgba(255, 255, 255, 0.04); color: #71717a; border: 1px solid var(--color-border); }
 
-.tag-green {
-  background: rgba(34, 197, 94, 0.1);
-  color: #4ade80;
-  border: 1px solid rgba(34, 197, 94, 0.2);
-}
+/* ── Progress ── */
+.progress-track { width: 100%; height: 3px; background: var(--color-border); border-radius: 2px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--color-primary); border-radius: 2px; transition: width 0.4s ease; }
 
-.tag-blue {
-  background: rgba(99, 102, 241, 0.1);
-  color: #818cf8;
-  border: 1px solid rgba(99, 102, 241, 0.2);
-}
-
-.tag-amber {
-  background: rgba(251, 191, 36, 0.1);
-  color: #fbbf24;
-  border: 1px solid rgba(251, 191, 36, 0.15);
-}
-
-.tag-red {
-  background: rgba(239, 68, 68, 0.1);
-  color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.15);
-}
-
-.tag-gray {
-  background: rgba(255, 255, 255, 0.05);
-  color: #888;
-  border: 1px solid #2e2e2e;
-}
-
-/* ── Progress bar ── */
-.progress-track {
-  width: 100%;
-  height: 2px;
-  background: #1f1f1f;
-  border-radius: 1px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background: #e5e5e5;
-  border-radius: 1px;
-  transition: width 0.4s ease;
-}
-
-/* ── Divider ── */
-.divider {
-  height: 1px;
-  background: #1f1f1f;
-}
-
-.divider-v {
-  width: 1px;
-  background: #1f1f1f;
-}
+/* ── Dividers ── */
+.divider { height: 1px; background: var(--color-border); }
+.divider-v { width: 1px; background: var(--color-border); }
 
 /* ── Animations ── */
-@keyframes fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
+@keyframes fade-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+@keyframes slide-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
 
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+.animate-in { animation: fade-in 0.4s ease both; }
+.animate-slide-up { animation: slide-up 0.5s ease both; }
+.animate-spin-slow { animation: spin-slow 3s linear infinite; }
+.blink { animation: blink 1.2s step-end infinite; }
 
-@keyframes spin-slow {
-  to {
-    transform: rotate(360deg);
-  }
-}
+/* ── Status dot ── */
+.status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.status-online { background: var(--color-success); box-shadow: 0 0 6px rgba(34, 197, 94, 0.4); }
+.status-busy { background: #f59e0b; animation: blink 1.2s step-end infinite; }
 
-@keyframes blink {
+/* ── Glow effects ── */
+.glow-blue { box-shadow: 0 0 20px rgba(59, 130, 246, 0.15), 0 0 60px rgba(59, 130, 246, 0.05); }
+.glow-text { text-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
+.neon-glow { box-shadow: 0 0 15px rgba(59, 130, 246, 0.25); }
+.btn-glow { box-shadow: 0 4px 24px rgba(59, 130, 246, 0.3); }
+.btn-glow:hover { box-shadow: 0 4px 32px rgba(59, 130, 246, 0.45); }
 
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0;
-  }
-}
-
-.animate-in {
-  animation: fade-in 0.3s ease both;
-}
-
-.animate-spin-slow {
-  animation: spin-slow 3s linear infinite;
-}
-
-.blink {
-  animation: blink 1.2s step-end infinite;
-}
-
-/* ── Status indicator ── */
-.status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  display: inline-block;
-}
-
-.status-online {
-  background: #22c55e;
-}
-
-.status-busy {
-  background: #f59e0b;
-  animation: blink 1.2s step-end infinite;
-}
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
