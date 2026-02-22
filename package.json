@@ -1,9 +1,5 @@
 {
   "name": "neuro-master-beatport-top-10-ai",
-  "workspaces": [
-    "frontend",
-    "backend/audio-analysis-trigger"
-  ],
   "scripts": {
     "dev-frontend": "npm run dev --prefix frontend",
     "dev-backend": "npm run dev --prefix backend/audio-analysis-trigger",
